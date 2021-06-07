@@ -1,23 +1,21 @@
 from setuptools import setup, find_packages
 
-__author__ = "Daren Thomas"
-__copyright__ = "Copyright 2020, Architecture and Building Systems - ETH Zurich"
-__credits__ = ["Daren Thomas"]
-__license__ = "MIT"
 __version__ = "1.0.0"
-__maintainer__ = "Daren Thomas"
-__email__ = "cea@arch.ethz.ch"
-__status__ = "Production"
 
-setup(name='cea_plugin_template',
+setup(name='cea_heat_rejection_plugin',
       version=__version__,
-      description="A template plugin for the City Energy Analyst",
+      description="A Heat Rejection plugin for the City Energy Analyst",
       license='MIT',
-      author='Architecture and Building Systems',
-      author_email='cea@arch.ethz.ch',
-      url='https://github.com/architecture-building-systems/cea-plugin-template',
-      long_description="A template plugin for the City Energy Analyst - fork this and edit to create your own plugin.",
-      py_modules=[''],
+      author='Cooling Singapore',
+      url='https://github.com/cooling-singapore/cea-heat-rejection-plugin',
       packages=find_packages(),
       package_data={},
+      install_requires=[
+          'pint',
+          'pandas',
+          'psychrolib',
+          'numpy',
+          'matplotlib',
+          'geopandas'
+      ],
       include_package_data=True)

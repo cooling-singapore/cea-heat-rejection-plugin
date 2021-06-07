@@ -1,0 +1,13 @@
+Heat Rejection:
+
+  - name: heat-rejection
+    label: Heat Rejection
+    description: Calculate heat rejection from cooling demand
+    interfaces: [cli, dashboard]
+    module: cea_heat_rejection_plugin.heat_rejection
+    parameters: ["general:scenario", "heat-rejection"]
+    input-files:
+      - [get_weather_file]
+      - [get_zone_building_names]
+      - [get_zone_geometry]
+      - [get_demand_results_file, building_name]
