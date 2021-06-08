@@ -1,0 +1,17 @@
+get_groups:
+  created_by:
+  file_path: inputs/groups/group.xlsx
+  file_type: xlsx
+  schema:
+    columns:
+      Group:
+        description: Unique group ID, indicating a set of one or more buildings.
+        type: string
+        unit: '[-]'
+        values: alphanumeric
+      Buildings:
+        description: Building IDs (from CEA) that are considered as a group, separated by comma.
+        type: string
+        unit: '[-]'
+        values: alphanumeric
+  used_by: [heat-rejection]

@@ -11,3 +11,4 @@ Heat Rejection:
       - [get_zone_building_names]
       - [get_zone_geometry]
       - [get_demand_results_file, building_name]
+      - [get_groups]
