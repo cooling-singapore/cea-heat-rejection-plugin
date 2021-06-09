@@ -8,6 +8,7 @@ import csv
 import os
 
 from cea.utilities import epwreader
+from cea.utilities.dbf import dbf_to_dataframe
 
 from cea_heat_rejection_plugin import BASE_CT_THRESHOLD
 from cea_heat_rejection_plugin.utilities.DK_thermo import HumidAir
@@ -50,24 +51,32 @@ def get_building_groups(locator):
     except IOError:
         print("Buildings groups not informed, CEA will consider individual buildings (unless connected to District Cooling)")
 
-    # Get list of CEA buildings
-        names=[]
-        groups=[]
-        for building_name in locator.get_total_demand.read().Name:
-            names.append(building_name)
-            group_from_building = list(building_name)
-            group_from_building[0] = 'G'
-            groups.append("".join(group_from_building))
+    #Get list of CEA buildings, separated if they are in a decentralized or centralized (district cooling) system
 
-    # Save groups
-        os.mkdir(locator.get_groups()[:-9], 0o666) #Create the directory that doesn't exist (can be improved)
+        names_decentralized = []
+        names_centralized = []
+        building_demand = pd.read_csv(locator.get_total_demand())
+        for i,row in building_demand.iterrows():
+            # Buildings that have no district cooling load are assigned to a decentralized list
+            if float(row.DC_cs_MWhyr) == 0:
+                names_decentralized.append(row.Name)
+            # Buildings that have district cooling load are assigned to a centralized list
+            else:
+                names_centralized.append(row.Name)
+
+    # Write CEA buildings groups into a csv file:
+        os.mkdir(locator.get_groups()[:-9], 0o666)  # Create the directory that doesn't exist (can be improved)
         with open(locator.get_groups(), 'w', newline='') as csvfile:
             writer = csv.writer(csvfile) #change to CEA path
             writer.writerow(('Group', 'Buildings'))
             counter =0
-            while counter < len(names):
-                writer.writerow((groups[counter], names[counter]))
+            while counter < len(names_decentralized):
+                group_name = 'G1' + str(counter).zfill(3)
+                writer.writerow((group_name, names_decentralized[counter]))
                 counter += 1
+            if names_centralized:
+                group_name = 'G1' + str(counter).zfill(3)
+                writer.writerow((group_name, ",".join(names_centralized)))
 
     building_groups = pd.read_csv(locator.get_groups())
     print(building_groups)
