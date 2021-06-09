@@ -1,7 +1,7 @@
 get_groups:
   created_by:
-  file_path: inputs/groups/group.xlsx
-  file_type: xlsx
+  file_path: inputs/groups/group.csv
+  file_type: csv
   schema:
     columns:
       Group:

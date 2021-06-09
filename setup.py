@@ -17,6 +17,5 @@ setup(name='cea_heat_rejection_plugin',
           'numpy',
           'matplotlib',
           'geopandas',
-          'csv'
       ],
       include_package_data=True)

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import csv
+import os
 
 from cea.utilities import epwreader
 
@@ -57,11 +58,10 @@ def get_building_groups(locator):
         group_from_building = list(building_name)
         group_from_building[0] = 'G'
         groups.append("".join(group_from_building))
-    print(names)
-    print(groups)
 
     # Save groups
-    with open('groups.csv', 'w', newline='') as csvfile:
+    os.mkdir(locator.get_groups()[:-9], 0o666) #Create the directory that doesn't exist (can be improved)
+    with open(locator.get_groups(), 'w', newline='') as csvfile:
         writer = csv.writer(csvfile) #change to CEA path
         writer.writerow(('Group', 'Buildings'))
         counter =0
@@ -69,7 +69,8 @@ def get_building_groups(locator):
             writer.writerow((groups[counter], names[counter]))
             counter += 1
 
-    building_groups = groups
+    building_groups = pd.DataFrame(list(zip(groups, names)),
+               columns =['Group', 'Buildings'])
     print(building_groups)
 
     return building_groups
