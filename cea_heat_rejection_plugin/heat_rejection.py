@@ -118,7 +118,7 @@ def main(config):
     building_properties = building_properties.merge(min_cap_opp, left_index=True, right_index=True)
     building_properties.head()
 
-    building_demands = pd.concat([building_demands] * 365, ignore_index=True)
+    building_demands = pd.concat([building_demands], ignore_index=True)
     building_demands['time'] = building_demands.index.values
 
     # agreagate thermal loads
