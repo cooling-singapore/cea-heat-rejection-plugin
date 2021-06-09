@@ -51,30 +51,28 @@ def get_building_groups(locator):
         print("Buildings groups not informed, CEA will consider individual buildings (unless connected to District Cooling)")
 
     # Get list of CEA buildings
-    names=[]
-    groups=[]
-    for building_name in locator.get_total_demand.read().Name:
-        names.append(building_name)
-        group_from_building = list(building_name)
-        group_from_building[0] = 'G'
-        groups.append("".join(group_from_building))
+        names=[]
+        groups=[]
+        for building_name in locator.get_total_demand.read().Name:
+            names.append(building_name)
+            group_from_building = list(building_name)
+            group_from_building[0] = 'G'
+            groups.append("".join(group_from_building))
 
     # Save groups
-    os.mkdir(locator.get_groups()[:-9], 0o666) #Create the directory that doesn't exist (can be improved)
-    with open(locator.get_groups(), 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile) #change to CEA path
-        writer.writerow(('Group', 'Buildings'))
-        counter =0
-        while counter < len(names):
-            writer.writerow((groups[counter], names[counter]))
-            counter += 1
+        os.mkdir(locator.get_groups()[:-9], 0o666) #Create the directory that doesn't exist (can be improved)
+        with open(locator.get_groups(), 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile) #change to CEA path
+            writer.writerow(('Group', 'Buildings'))
+            counter =0
+            while counter < len(names):
+                writer.writerow((groups[counter], names[counter]))
+                counter += 1
 
-    building_groups = pd.DataFrame(list(zip(groups, names)),
-               columns =['Group', 'Buildings'])
+    building_groups = pd.read_csv(locator.get_groups())
     print(building_groups)
 
     return building_groups
-
 
 def main(config):
     """
