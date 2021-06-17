@@ -32,7 +32,7 @@ def get_building_demands(locator):
 
     for building_name in locator.get_zone_building_names():
         building_demand = pd.read_csv(locator.get_demand_results_file(building_name))
-        cooling_demand = building_demand['DC_cs_kWh'] + building_demand['E_cs_kWh'] + building_demand['Qcs_kWh']
+        cooling_demand = building_demand['DC_cs_kWh'].abs() + building_demand['E_cs_kWh'].abs() + building_demand['Qcs_kWh'].abs()  #Assuring heat rejection is positive
         building_demands[building_name] = cooling_demand
 
     building_demands['time'] = building_demands.index.values
