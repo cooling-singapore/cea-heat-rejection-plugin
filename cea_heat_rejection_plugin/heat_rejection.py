@@ -65,12 +65,12 @@ def get_building_groups(locator):
         names_centralized = []
         building_demand = pd.read_csv(locator.get_total_demand())
         for i,row in supply_systems.iterrows():
-            # Buildings that have no district cooling load are assigned to a decentralized list
-            if float(row.type_cs) in district_cooling_systems:
-                names_decentralized.append(row.Name)
-            # Buildings that have district cooling load are assigned to a centralized list
-            else:
+            # Buildings that have district cooling supply are assigned to a centralized list
+            if row.type_cs in district_cooling_systems:
                 names_centralized.append(row.Name)
+            # Buildings that have no district cooling supply are assigned to a decentralized list
+            else:
+                names_decentralized.append(row.Name)
 
         # Write CEA buildings groups into a group.csv file:
         os.mkdir(locator.get_groups()[:-9], 0o666)
@@ -110,7 +110,7 @@ def get_building_groups(locator):
     building_groups_no_ct = pd.DataFrame(data_no_ct) #Not currently used (needed to output minisplit results)
     print("Building groups with cooling tower (district cooling included): \n",building_groups_ct)
 
-    return building_groups_ct,building_groups_no_ct
+    return building_groups_ct
 
 def main(config):
     """
