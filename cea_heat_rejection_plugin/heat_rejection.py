@@ -131,6 +131,8 @@ def main(config):
     # Read scenario weather
     weather = epwreader.epw_reader(locator.get_weather_file())
     drybulb_temp = weather['drybulb_C']
+    if max(weather['relhum_percent']) > 100:
+        warnings.warn("Original weather has relative humidity above 100%. A maximum of 100% will be considered.")
     rel_humidity = np.clip(weather['relhum_percent']/100, 0.0, 1.0) # Make sure values are between 0 and 1 (inclusive)
 
     air_i, WBT = set_ambient(drybulb_temp, rel_humidity)
