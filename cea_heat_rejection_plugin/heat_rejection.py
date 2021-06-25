@@ -11,6 +11,8 @@ import warnings
 from itertools import groupby
 from cea.utilities import epwreader
 from cea.utilities.dbf import dbf_to_dataframe
+from cea.utilities.date import get_date_range_hours_from_year
+from cea.demand import demand_writers
 
 from cea_heat_rejection_plugin import BASE_CT_THRESHOLD
 from cea_heat_rejection_plugin.utilities.DK_thermo import HumidAir
@@ -110,7 +112,7 @@ def get_building_groups(config,locator):
     building_groups_no_ct = pd.DataFrame(data_no_ct) #Not currently used (needed to output minisplit results)
     print("Building groups with cooling tower (district cooling included): \n",building_groups_ct)
 
-    return building_groups_ct
+    return building_groups,building_groups_ct, building_groups_no_ct
 
 def main(config):
     """
@@ -139,7 +141,7 @@ def main(config):
     # read the thermal load
     building_demands = get_building_demands(locator)
     building_properties = get_building_properties(locator)
-    building_groups = get_building_groups(locator)
+    building_groups, building_groups_ct, building_groups_no_ct = get_building_groups(config,locator)
 
     # compute extra properties
     max_load_series = pd.DataFrame({'Max_load_kWh': building_demands.max(0)})
@@ -154,6 +156,7 @@ def main(config):
 
     # agreagate thermal loads
     group_demand_dict = {}
+
     for i, row in building_groups.iterrows():
         building_list = row['Buildings'].split(",")
         demand = np.zeros(building_demands.shape[0])
@@ -219,13 +222,62 @@ def main(config):
 
     # Output results
     out = pd.DataFrame()
+    sensible_share_ct = pd.DataFrame()
+    latent_share_ct = pd.DataFrame()
     for cooling_tower in res['air_o'].columns:
         _list = list()
+        sensible_share = list()
+        latent_share = list()
         for i in range(0, len(air_i)):
             _list.append(HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))
+            sensible_share.append((HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))[0])
+            latent_share.append((HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))[1])
         out[cooling_tower] = _list
+        sensible_share_ct[cooling_tower] = sensible_share
+        latent_share_ct[cooling_tower] = latent_share
 
-    print(out)
+    sensible_share_group = pd.DataFrame(columns=group_demand_df.columns)
+    # sensible_share_group.columns = [group_demand_df.columns]
+    latent_share_group = pd.DataFrame()
+    # latent_share_group.columns = group_demand_df.columns
+    i=0
+    j=0
+    while i < len(sensible_share_ct.columns):
+        # for group in sensible_share_ct:
+        sensible_share_group['G1' + str(j).zfill(3)] = sensible_share_ct[['CT'+str(i), 'CT'+str(i+1), 'CT'+str(i+2)]].mean(axis=1)
+        latent_share_group['G1' + str(j).zfill(3)] = latent_share_ct[['CT' + str(i), 'CT' + str(i + 1), 'CT' + str(i + 1)]].mean(axis=1)
+        i+=3
+        j+=1
+
+    print(sensible_share_group)
+
+    Q_reject_kWh = group_demand_df
+    Q_reject_sens_kWh = group_demand_df.mul(sensible_share_group)
+    Q_reject_lat_kWh = group_demand_df.mul(latent_share_group)
+
+    year = weather['year'][0]
+
+    for group in building_groups.Group:
+        if group in list(building_groups_ct.Group):
+            Q_reject_kWh = group_demand_df
+            Q_reject_sens_kWh = group_demand_df.mul(sensible_share_group)
+            Q_reject_lat_kWh = group_demand_df.mul(latent_share_group)
+        else:
+            Q_reject_kWh = group_demand_df
+            Q_reject_sens_kWh = group_demand_df
+            Q_reject_lat_kWh = group_demand_df*0
+        building = building_groups.loc[building_groups.Group == group].Buildings
+
+        output = pd.DataFrame()
+        output['Buildings'] = list(building)*len(Q_reject_kWh)
+        output['Date'] = get_date_range_hours_from_year(year)
+        output['Q_reject_kWh'] = Q_reject_kWh[group]
+        output['Q_reject_sens_kWh'] = Q_reject_sens_kWh[group]
+        output['Q_reject_lat_kWh'] = Q_reject_lat_kWh[group]
+
+
+        get_heat_rejection_folder = locator._ensure_folder(locator.scenario, 'outputs', 'data', 'heat_rejection')
+        output.to_csv(os.path.join(get_heat_rejection_folder,group+'_'+str(np.array(building)[0])+'.csv'))
 
 if __name__ == '__main__':
     main(cea.config.Configuration())
