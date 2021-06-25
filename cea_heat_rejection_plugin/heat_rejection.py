@@ -45,12 +45,11 @@ def get_building_properties(locator):
     return building_properties
 
 
-def get_building_groups(locator):
+def get_building_groups(config,locator):
 
     # Specifying types of systems within CEA database
     building_supply = dbf_to_dataframe(locator.get_building_supply())
     database_supply = pd.read_excel(locator.get_database_supply_assemblies(),"COOLING")
-    cooling_tower_systems = ['SUPPLY_COOLING_AS2', 'SUPPLY_COOLING_AS3', 'SUPPLY_COOLING_AS4']
 
     # Check if the user included a building group in the inputs folder
     try:
@@ -99,7 +98,7 @@ def get_building_groups(locator):
             building_supply_system = building_supply.loc[building_supply.Name == building]
             supply_system.append(building_supply_system.type_cs.values)
         if all(x == supply_system[0] for x in supply_system):
-            if supply_system[0] in cooling_tower_systems:
+            if str(supply_system[0][0]) in config.heat_rejection.cooling_tower_systems:
                 data_ct['Group'].append(grouping.Group)
                 data_ct['Buildings'].append(grouping.Buildings)
             else:
