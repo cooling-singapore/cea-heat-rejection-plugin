@@ -141,7 +141,15 @@ class HumidAir:
         deltah_LH = LH_coeff(0.5 * (T_f + T_i)) * (w_f - w_i)  # J/kg da
         deltah_SH = h_f - h_i - deltah_LH
 
-        return deltah_SH, deltah_LH, LH_coeff_err
+        if deltah_LH > 0 and deltah_SH > 0:
+            percentage_SH = deltah_SH/(deltah_SH+deltah_LH)
+            percentage_LH = deltah_LH/(deltah_SH+deltah_LH)
+        else:
+            percentage_SH = 0
+            percentage_LH = 0
+
+        # return deltah_SH, deltah_LH, LH_coeff_err
+        return percentage_SH, percentage_LH
 
     def __repr__(self):
         return "Humid air at {:0.2f} °C, {:0.3f} RH".format(self.TDryBulb, self.RelHum)
