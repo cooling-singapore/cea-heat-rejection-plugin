@@ -18,7 +18,7 @@ from cea_heat_rejection_plugin import BASE_CT_THRESHOLD
 from cea_heat_rejection_plugin.utilities.DK_thermo import HumidAir
 from cea_heat_rejection_plugin.utilities.coolingtowers import set_ambient, simulate_CT, parse_BldgToCTs, calc_CTheatload
 
-CT_CATALOG_FILE = './data/catalog.csv'
+CT_CATALOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'catalog.csv')
 
 
 class HeatRejectionPlugin(cea.plugin.CeaPlugin):
@@ -90,7 +90,7 @@ def get_building_groups(config,locator):
 
     # Separating building groups with and without cooling towers:
     building_groups = pd.read_csv(locator.get_groups())
-    print("Building groups: \n",building_groups)
+    print("Building groups: \n",building_groups) #print table with all groups of buildings
     data_ct = {'Group':[],'Buildings':[]}
     data_no_ct = {'Group': [], 'Buildings': []}
     for i, grouping in building_groups.iterrows():
@@ -99,7 +99,9 @@ def get_building_groups(config,locator):
         for building in building_list:
             building_supply_system = building_supply.loc[building_supply.Name == building]
             supply_system.append(building_supply_system.type_cs.values)
+        # Check if all buildings of the same group have the same supply system:
         if all(x == supply_system[0] for x in supply_system):
+            # Check if the buildings from a group have cooling tower:
             if str(supply_system[0][0]) in config.heat_rejection.cooling_tower_systems:
                 data_ct['Group'].append(grouping.Group)
                 data_ct['Buildings'].append(grouping.Buildings)
@@ -107,12 +109,13 @@ def get_building_groups(config,locator):
                 data_no_ct['Group'].append(grouping.Group)
                 data_no_ct['Buildings'].append(grouping.Buildings)
         else:
-            warnings.warn("Buildings from the same group must have the same supply system. Please check type_cs for"+str(building_list)) #Throw error
+            raise ValueError("Buildings from the same group must have the same supply system. Please check type_cs for"+str(building_list))
     building_groups_ct = pd.DataFrame(data_ct)
-    building_groups_no_ct = pd.DataFrame(data_no_ct) #Not currently used (needed to output minisplit results)
-    print("Building groups with cooling tower (district cooling included): \n",building_groups_ct)
+    building_groups_no_ct = pd.DataFrame(data_no_ct)
+    print("Building groups with cooling tower (district cooling included): \n",building_groups_ct) #print table only with buildings that have cooling tower
 
     return building_groups,building_groups_ct, building_groups_no_ct
+
 
 def main(config):
     """
@@ -220,50 +223,41 @@ def main(config):
     T_drybulb_out = res['air_o']
     T_drybulb_out.columns = CT_design['ID']
 
-    # Output results
-    out = pd.DataFrame()
+    ### Output results and save
     sensible_share_ct = pd.DataFrame()
     latent_share_ct = pd.DataFrame()
+
+    # Get the split between sensible and latent heat
     for cooling_tower in res['air_o'].columns:
-        _list = list()
         sensible_share = list()
         latent_share = list()
         for i in range(0, len(air_i)):
-            _list.append(HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))
             sensible_share.append((HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))[0])
             latent_share.append((HumidAir.sensible_latent_heat_split(air_i[i], res['air_o'][cooling_tower][i]))[1])
-        out[cooling_tower] = _list
         sensible_share_ct[cooling_tower] = sensible_share
         latent_share_ct[cooling_tower] = latent_share
 
     sensible_share_group = pd.DataFrame(columns=group_demand_df.columns)
-    # sensible_share_group.columns = [group_demand_df.columns]
-    latent_share_group = pd.DataFrame()
-    # latent_share_group.columns = group_demand_df.columns
+    latent_share_group = pd.DataFrame(columns=group_demand_df.columns)
+
+    # Average the results for the 3 Cooling Towers for each group
     i=0
     j=0
     while i < len(sensible_share_ct.columns):
         # for group in sensible_share_ct:
         sensible_share_group['G1' + str(j).zfill(3)] = sensible_share_ct[['CT'+str(i), 'CT'+str(i+1), 'CT'+str(i+2)]].mean(axis=1)
-        latent_share_group['G1' + str(j).zfill(3)] = latent_share_ct[['CT' + str(i), 'CT' + str(i + 1), 'CT' + str(i + 1)]].mean(axis=1)
+        latent_share_group['G1' + str(j).zfill(3)] = latent_share_ct[['CT' + str(i), 'CT' + str(i + 1), 'CT' + str(i + 2)]].mean(axis=1)
         i+=3
         j+=1
 
-    print(sensible_share_group)
-
-    Q_reject_kWh = group_demand_df
-    Q_reject_sens_kWh = group_demand_df.mul(sensible_share_group)
-    Q_reject_lat_kWh = group_demand_df.mul(latent_share_group)
-
+    # Save outputs
     year = weather['year'][0]
-
     for group in building_groups.Group:
+        Q_reject_kWh = group_demand_df
         if group in list(building_groups_ct.Group):
-            Q_reject_kWh = group_demand_df
             Q_reject_sens_kWh = group_demand_df.mul(sensible_share_group)
             Q_reject_lat_kWh = group_demand_df.mul(latent_share_group)
         else:
-            Q_reject_kWh = group_demand_df
             Q_reject_sens_kWh = group_demand_df
             Q_reject_lat_kWh = group_demand_df*0
         building = building_groups.loc[building_groups.Group == group].Buildings
@@ -275,9 +269,11 @@ def main(config):
         output['Q_reject_sens_kWh'] = Q_reject_sens_kWh[group]
         output['Q_reject_lat_kWh'] = Q_reject_lat_kWh[group]
 
-
         get_heat_rejection_folder = locator._ensure_folder(locator.scenario, 'outputs', 'data', 'heat_rejection')
-        output.to_csv(os.path.join(get_heat_rejection_folder,group+'_'+str(np.array(building)[0])+'.csv'))
+        # output.to_csv(os.path.join(get_heat_rejection_folder,group+'_'+str(np.array(building)[0])+'.csv')) #to save groups with building names (removed because can get too long)
+        output.to_csv(os.path.join(get_heat_rejection_folder, group + '.csv'))
+    print('Heat Rejection calculation is finished, check heat_rejection in data folder (outputs)')
+
 
 if __name__ == '__main__':
     main(cea.config.Configuration())

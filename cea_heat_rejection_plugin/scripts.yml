@@ -1,5 +1,16 @@
 Heat Rejection:
 
+  - name: groups-helper
+    label: Groups Helper
+    description: Assign CEA Buildings into groups
+    interfaces: [cli, dashboard]
+    module: cea_heat_rejection_plugin.groups_helper
+    parameters: ["general:scenario"]
+    input-files:
+      - [get_weather_file]
+      - [get_zone_geometry]
+      - [get_demand_results_file, building_name]
+      
   - name: heat-rejection
     label: Heat Rejection
     description: Calculate heat rejection from cooling demand
@@ -8,7 +19,6 @@ Heat Rejection:
     parameters: ["general:scenario", "heat-rejection"]
     input-files:
       - [get_weather_file]
-      - [get_zone_building_names]
       - [get_zone_geometry]
       - [get_demand_results_file, building_name]
-      - [get_groups]
+

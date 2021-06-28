@@ -15,3 +15,31 @@ get_groups:
         unit: '[-]'
         values: alphanumeric
   used_by: [heat-rejection]
+  
+get_heat_rejection_results_file:
+  created_by:
+  file_path: /outputs/data/heat_rejection/{group}.csv"""
+  file_type: csv
+  schema:
+    columns:
+      Date:
+        description: Date
+        type: date
+        unit: '[-]'
+        values: DateTime
+      Q_reject_sens_kWh:
+        description: Heat released by airconditioning as sensible heat
+        type: float
+        unit: '[-]'
+        values: alphanumeric
+      Q_reject_lat_kWh:
+        description: Heat released by airconditioning as latent heat
+        type: float
+        unit: '[-]'
+        values: alphanumeric
+      Q_reject_kWh:
+        description: Total heat released by airconditioning
+        type: float
+        unit: '[-]'
+        values: alphanumeric  
+  used_by: [heat-rejection]
