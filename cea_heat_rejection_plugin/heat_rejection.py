@@ -1,3 +1,7 @@
+"""
+This tool creates heat rejection for a group of buildings, split into sensible and latent heat.
+Based on a previously defined Cooling Tower Model (available in: https://github.com/cooling-singapore/CoolingTower)
+"""
 import cea.config
 import cea.inputlocator
 import cea.plugin
@@ -21,6 +25,15 @@ from cea_heat_rejection_plugin.utilities.DK_thermo import HumidAir
 from cea_heat_rejection_plugin.utilities.coolingtowers import set_ambient, simulate_CT, parse_BldgToCTs, calc_CTheatload
 
 CT_CATALOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'catalog.csv')
+
+__author__ = "Cooling Singapore (Luis Santos, Reynold Mok)"
+__copyright__ = "Copyright 2020, Architecture and Building Systems - ETH Zurich"
+__credits__ = ["Luis Santos, Reynold Mok, David Kayanan, Jimeno Fonseca"]
+__license__ = "MIT"
+__version__ = "1.0"
+__maintainer__ = "Reynold Mok"
+__email__ = "cea@arch.ethz.ch"
+__status__ = "Production"
 
 
 class HeatRejectionPlugin(cea.plugin.CeaPlugin):
@@ -99,6 +112,12 @@ def get_building_groups(config,locator):
 
 def main(config):
     """
+    This tool creates outputs of hourly heat that is rejected by each building group. Heat rejection is defined as the
+    total heat that leaves the building through air-conditioning, which includes the cooling load and the energy required by cooling systems.
+    In case the group system is defined by a wet cooling tower, the model splits the heat rejected into sensible
+    and latent fractions. For the remaining cases, heat is assumed to be 100% sensible heat.
+    The calculations of the cooling tower were previously developed in https://github.com/cooling-singapore/CoolingTower
+
     This is the main entry point to your script. Any parameters used by your script must be present in the ``config``
     parameter. The CLI will call this ``main`` function passing in a ``config`` object after adjusting the configuration
     to reflect parameters passed on the command line / user interface
@@ -203,7 +222,7 @@ def main(config):
     T_drybulb_out = res['air_o']
     T_drybulb_out.columns = CT_design['ID']
 
-    ### Output results and save
+    # Output results and save
     sensible_share_ct = pd.DataFrame()
     latent_share_ct = pd.DataFrame()
 
@@ -221,14 +240,14 @@ def main(config):
     latent_share_group = pd.DataFrame(columns=group_demand_df.columns)
 
     # Average the results for the 3 Cooling Towers for each group
-    i=0
-    j=0
+    i = 0
+    j = 0
     while i < len(sensible_share_ct.columns):
         # for group in sensible_share_ct:
         sensible_share_group['G1' + str(j).zfill(3)] = sensible_share_ct[['CT'+str(i), 'CT'+str(i+1), 'CT'+str(i+2)]].mean(axis=1)
         latent_share_group['G1' + str(j).zfill(3)] = latent_share_ct[['CT' + str(i), 'CT' + str(i + 1), 'CT' + str(i + 2)]].mean(axis=1)
-        i+=3
-        j+=1
+        i += 3
+        j += 1
 
     # Save outputs
     year = weather['year'][0]
