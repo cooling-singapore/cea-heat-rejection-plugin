@@ -270,7 +270,7 @@ def main(config):
 
         get_heat_rejection_folder = locator._ensure_folder(locator.scenario, 'outputs', 'data', 'heat_rejection')
         # output.to_csv(os.path.join(get_heat_rejection_folder,group+'_'+str(np.array(building)[0])+'.csv')) #to save groups with building names (removed because can get too long)
-        output.to_csv(os.path.join(get_heat_rejection_folder, group + '.csv'))
+        output.to_csv(os.path.join(get_heat_rejection_folder, group + '.csv'), index=False)
     print('Heat Rejection calculation is finished, check heat_rejection in data folder (outputs)')
 
 
