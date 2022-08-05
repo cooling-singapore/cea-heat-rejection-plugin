@@ -254,7 +254,7 @@ def main(config):
 
         # Save outputs
         year = weather['year'][0]
-        for group in building_groups.Group:
+        for group in building_groups_ct.Group:
             Q_reject_kWh = group_demand_df
             if group in list(building_groups_ct.Group):
                 Q_reject_sens_kWh = group_demand_df.mul(sensible_share_group)
