@@ -205,7 +205,9 @@ def main(config):
 
         BldgToCTs[group] = peak_unit_size, intermediate_unit_size, base_unit_size
 
-    if not group_demand_df.empty:
+    if group_demand_df.empty:
+        print('There are no buildings with cooling towers, therefore the Heat Rejection model will not be activated.')
+    else:
         # split the load per Cooling tower capacity
         CT_load, results_columns = calc_CTheatload(group_demand_df, BldgToCTs, CT_catalog, t_from=None, t_to=None)
 
@@ -272,7 +274,7 @@ def main(config):
             get_heat_rejection_folder = locator._ensure_folder(locator.scenario, 'outputs', 'data', 'heat_rejection')
             # output.to_csv(os.path.join(get_heat_rejection_folder,group+'_'+str(np.array(building)[0])+'.csv')) #to save groups with building names (removed because can get too long)
             output.to_csv(os.path.join(get_heat_rejection_folder, group + '.csv'), index=False)
-    print('Heat Rejection calculation is finished, check heat_rejection in data folder (outputs)')
+        print('Heat Rejection calculation is finished, check heat_rejection in data folder (outputs)')
 
 
 if __name__ == '__main__':
