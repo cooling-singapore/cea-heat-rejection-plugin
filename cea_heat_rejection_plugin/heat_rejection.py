@@ -243,14 +243,10 @@ def main(config):
         latent_share_group = pd.DataFrame(columns=group_demand_df.columns)
 
         # Average the results for the 3 Cooling Towers for each group
-        i = 0
-        j = 0
-        while i < len(sensible_share_ct.columns):
-            # for group in sensible_share_ct:
-            sensible_share_group['G1' + str(j).zfill(3)] = sensible_share_ct[['CT'+str(i), 'CT'+str(i+1), 'CT'+str(i+2)]].mean(axis=1)
-            latent_share_group['G1' + str(j).zfill(3)] = latent_share_ct[['CT' + str(i), 'CT' + str(i + 1), 'CT' + str(i + 2)]].mean(axis=1)
-            i += 3
-            j += 1
+        for i, group in enumerate(group_demand_df.columns):
+            cooling_towers = [f"CT{i*3 + j}" for j in range(3)]
+            sensible_share_group[group] = sensible_share_ct[cooling_towers].mean(axis=1)
+            latent_share_group[group] = latent_share_ct[cooling_towers].mean(axis=1)
 
         # Save outputs
         year = weather['year'][0]
