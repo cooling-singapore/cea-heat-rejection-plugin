@@ -491,7 +491,7 @@ def find_upper_neighbours(value, df, colname):
 
 def size_cooling_tower(group_demand_df, CT_catalog, BASE_CT_THRESHOLD, OVERDIMENSIONING_THRESHOLD):
     BldgToCTs = {}
-    for (group, demand) in group_demand_df.iteritems():
+    for (group, demand) in group_demand_df.items():
         peak = max(demand)
 
         # every CT has three main units

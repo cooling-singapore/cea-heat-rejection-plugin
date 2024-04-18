@@ -179,7 +179,7 @@ def main(config):
             return upperneighbour
 
     BldgToCTs = {}
-    for (group, demand) in group_demand_df.iteritems():
+    for (group, demand) in group_demand_df.items():
         peak = max(demand)
         average = np.mean(demand.replace(0, np.NaN))
         baseload = BASE_CT_THRESHOLD * peak
